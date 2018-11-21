@@ -111,6 +111,25 @@ function numberSchema(opts = {}, path) {
   return simpleSchema(T_NUMBER, opts, path);
 }
 
+function isInteger(value) {
+  return getType(value) === T_NUMBER && Math.floor(value) === value;
+}
+
+function integerSchema(opts = {}, path) {
+  return simpleSchema(isInteger, opts, path);
+}
+
+function numberStringSchema(opts = {}, path) {
+  expectIfDefined(T_NUMBER, opts.defaultValue, path);
+  return (v, path) => {
+    const value = parseFloat(mandatoryCheck(T_STRING, opts, path, v));
+    if (isNaN(value)) {
+      error(path, "Invalid number");
+    }
+    return value;
+  };
+}
+
 function stringSchema(opts = {}, path) {
   return simpleSchema(T_STRING, opts, path);
 }
@@ -296,6 +315,8 @@ schema.types = {
   Null: nullSchema,
   Boolean: booleanSchema,
   Number: numberSchema,
+  NumberString: numberStringSchema,
+  Integer: integerSchema,
   String: stringSchema,
   Array: arraySchema,
   Multi: multiSchema,

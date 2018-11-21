@@ -48,6 +48,34 @@ test("Number failure", () => {
   expect(() => schema(Number)("xxx")).toThrow();
 });
 
+test("NumberString", () => {
+  expect(schema(schema.types.NumberString)("1.23")).toEqual(1.23);
+});
+
+test("NumberString", () => {
+  expect(
+    schema({ $type: schema.types.NumberString, defaultValue: 3.19 })()
+  ).toEqual(3.19);
+});
+
+test("Integer default", () => {
+  expect(schema({ $type: schema.types.Integer })(34)).toEqual(34);
+});
+
+test("Integer default (opts)", () => {
+  expect(schema({ $type: schema.types.Integer, defaultValue: 10 })()).toEqual(
+    10
+  );
+});
+
+test("Integer fails with floating point", () => {
+  expect(() => schema({ $type: schema.types.Integer })(1.23)).toThrow();
+});
+
+test("Integer failure", () => {
+  expect(() => schema({ $type: schema.types.Integer })("134")).toThrow();
+});
+
 test("String default", () => {
   expect(schema("test")()).toEqual("test");
 });
