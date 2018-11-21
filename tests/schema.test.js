@@ -167,6 +167,31 @@ test("Custom parser simple", () => {
   expect(schema((_opts, _path, _schema) => (v, _path) => v)("y")).toEqual("y");
 });
 
+test("Enum", () => {
+  expect(schema({ $type: schema.types.Enum, values: ["a", "b"] })("b")).toEqual(
+    "b"
+  );
+});
+
+test("Enum default (opts)", () => {
+  expect(
+    schema({
+      $type: schema.types.Enum,
+      values: ["a", "b"],
+      defaultValue: "a"
+    })()
+  ).toEqual("a");
+});
+
+test("Enum failure", () => {
+  expect(() =>
+    schema({
+      $type: schema.types.Enum,
+      values: ["a", "b"]
+    })("c")
+  ).toThrow();
+});
+
 test("Object without $type", () => {
   expect(
     schema({

@@ -18,6 +18,7 @@ const T_FUNCTION = "Function";
 const DEFAULT_FIELD = "defaultValue";
 const ARRAY_SUB_TYPE_FIELD = "subType";
 const MULTI_SUB_TYPES_FIELD = "subTypes";
+const ENUM_VALUES_FIELD = "values";
 const OBJECT_FIELDS_FIELD = "fields";
 const TYPE_FIELD = "$type";
 
@@ -57,10 +58,17 @@ function error(path, msg) {
   throw e;
 }
 
-function expectType(expectedType, value, path) {
+function expectType(expected, value, path) {
   const t = getType(value);
-  if (t !== expectedType) {
-    error(path, "Expected " + expectedType + ", got " + t);
+
+  if (typeof expected === "function") {
+    if (!expected(value, path)) {
+      error(path, "Invalid value");
+    }
+  } else {
+    if (t !== expected) {
+      error(path, "Expected " + expected + ", got " + t);
+    }
   }
   return value;
 }
@@ -136,6 +144,20 @@ function multiSchema(opts = {}, path) {
     const value = mandatoryCheck(T_ARRAY, opts, path, v);
     return subTypes.map((sub, i) =>
       sub(value[i], new Path(path, value, i + ""))
+    );
+  };
+}
+
+function enumSchema(opts = {}, path) {
+  if (getType(opts[ENUM_VALUES_FIELD]) !== T_ARRAY) {
+    error(path, "Enum needs a values array");
+  }
+  return (v, path) => {
+    return mandatoryCheck(
+      value => opts[ENUM_VALUES_FIELD].indexOf(value) >= 0,
+      opts,
+      path,
+      v
     );
   };
 }
@@ -277,6 +299,7 @@ schema.types = {
   String: stringSchema,
   Array: arraySchema,
   Multi: multiSchema,
+  Enum: enumSchema,
   Object: objectSchema,
   RegExp: regexpSchema,
   Date: dateSchema,
