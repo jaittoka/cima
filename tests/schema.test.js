@@ -227,6 +227,18 @@ test("Object with default", () => {
   ).toEqual({ name: "unknown", age: 0 });
 });
 
+test("Object should fail with nonexisting mandatory field", () => {
+  expect(() => schema({ foo: String, bar: Number })({ foo: "zoo" })).toThrow();
+});
+
+test("Object should not fail with nonexisting field which is optional", () => {
+  expect(
+    schema({ foo: String, bar: { $type: Number, optional: true } })({
+      foo: "zoo"
+    })
+  ).toEqual({ foo: "zoo" });
+});
+
 const Address = {
   street: String,
   code: Number,
