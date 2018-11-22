@@ -1,8 +1,4 @@
-const typeRE = /^\[object ([^\]]+)\]$/;
-
-function getType(v) {
-  return typeRE.exec(Object.prototype.toString.call(v))[1];
-}
+const getType = require("./getType");
 
 const T_UNDEFINED = "Undefined";
 const T_NULL = "Null";
@@ -141,11 +137,13 @@ function integerSchema(opts = {}, path) {
 function numberStringSchema(opts = {}, path) {
   expectIfDefined(T_NUMBER, opts.defaultValue, path);
   return (v, path = ROOT) => {
-    const value = parseFloat(mandatoryCheck(T_STRING, opts, path, v));
-    if (isNaN(value)) {
+    const value = mandatoryCheck(T_STRING, opts, path, v);
+    if (!value) return;
+    const num = parseFloat(value);
+    if (isNaN(num)) {
       error(path, "Invalid number");
     }
-    return value;
+    return num;
   };
 }
 

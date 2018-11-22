@@ -62,6 +62,17 @@ test("NumberString", () => {
   ).toEqual(3.19);
 });
 
+test("NumberString optional", () => {
+  expect(
+    schema({
+      to: {
+        $type: schema.types.NumberString,
+        optional: true
+      }
+    })({})
+  ).toEqual({});
+});
+
 test("Integer default", () => {
   expect(schema({ $type: schema.types.Integer })(34)).toEqual(34);
 });
