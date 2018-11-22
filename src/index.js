@@ -212,7 +212,10 @@ function objectSchema(opts = {}, path) {
     const value = mandatoryCheck(T_OBJECT, opts, path, v);
     if (value === undefined) return;
     return Object.keys(fields).reduce((res, name) => {
-      res[name] = fields[name](value[name], new Path(path, value, name));
+      const fieldValue = fields[name](value[name], new Path(path, value, name));
+      if (fieldValue !== undefined) {
+        res[name] = fieldValue;
+      }
       return res;
     }, {});
   };
@@ -347,3 +350,17 @@ schema.isSchema = isSchema;
 schema.Path = Path;
 
 module.exports = schema;
+
+const s = schema({
+  from: {
+    $type: numberStringSchema,
+    optional: true
+  },
+  to: {
+    $type: Number,
+    optional: true
+  }
+});
+
+const r = s({});
+console.log(r);
