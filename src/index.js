@@ -138,7 +138,7 @@ function numberStringSchema(opts = {}, path) {
   expectIfDefined(T_NUMBER, opts.defaultValue, path);
   return (v, path = ROOT) => {
     const value = mandatoryCheck(T_STRING, opts, path, v);
-    if (!value) return;
+    if (value === undefined) return;
     const num = parseFloat(value);
     if (isNaN(num)) {
       error(path, "Invalid number");
@@ -166,7 +166,7 @@ function arraySchema(opts = {}, path) {
   const subType = schema(opts[ARRAY_SUB_TYPE_FIELD]);
   return (v, path = ROOT) => {
     const value = mandatoryCheck(T_ARRAY, opts, path, v);
-    if (!value) return;
+    if (value === undefined) return;
     return value.map((item, i) => subType(item, new Path(path, value, i + "")));
   };
 }
@@ -210,6 +210,7 @@ function objectSchema(opts = {}, path) {
   const fields = fieldsSchema(opts[OBJECT_FIELDS_FIELD], path);
   return (v, path = ROOT) => {
     const value = mandatoryCheck(T_OBJECT, opts, path, v);
+    if (value === undefined) return;
     return Object.keys(fields).reduce((res, name) => {
       res[name] = fields[name](value[name], new Path(path, value, name));
       return res;
