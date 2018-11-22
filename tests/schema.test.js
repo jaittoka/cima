@@ -48,6 +48,10 @@ test("Number failure", () => {
   expect(() => schema(Number)("xxx")).toThrow();
 });
 
+test("Number restricted to integers fails with floating point", () => {
+  expect(() => schema({ $type: Number, integersOnly: true })(1.23)).toThrow();
+});
+
 test("NumberString", () => {
   expect(schema(schema.types.NumberString)("1.23")).toEqual(1.23);
 });

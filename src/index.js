@@ -42,6 +42,8 @@ class Path {
   }
 }
 
+const ROOT = new Path(null, {}, "");
+
 function dropType(obj) {
   return Object.keys(obj)
     .filter(key => key !== TYPE_FIELD)
@@ -62,8 +64,14 @@ function expectType(expected, value, path) {
   const t = getType(value);
 
   if (typeof expected === "function") {
-    if (!expected(value, path)) {
-      error(path, "Invalid value");
+    const msg = expected(value, path);
+    if (getType(msg) === T_BOOLEAN) {
+      if (msg === true) {
+        error(path, "Invalid value");
+      }
+      // pass through
+    } else {
+      error(path, msg);
     }
   } else {
     if (t !== expected) {
@@ -92,7 +100,7 @@ function mandatoryCheck(expected, opts, path, value) {
 
 function simpleSchema(expected, opts, path) {
   expectIfDefined(expected, opts.defaultValue, path);
-  return (value, path) => mandatoryCheck(expected, opts, path, value);
+  return (value, path = ROOT) => mandatoryCheck(expected, opts, path, value);
 }
 
 function undefinedSchema(_opts, _path) {
@@ -108,20 +116,31 @@ function booleanSchema(opts = {}, path) {
 }
 
 function numberSchema(opts = {}, path) {
-  return simpleSchema(T_NUMBER, opts, path);
+  const simple = simpleSchema(T_NUMBER, opts, path);
+  return (v, path = ROOT) => {
+    const value = simple(v, path);
+    if (opts.integersOnly === true && !isInteger(value)) {
+      error(path, "Expected an integer number");
+    }
+    return value;
+  };
 }
 
 function isInteger(value) {
   return getType(value) === T_NUMBER && Math.floor(value) === value;
 }
 
+function checkInteger(value) {
+  return !isInteger(value);
+}
+
 function integerSchema(opts = {}, path) {
-  return simpleSchema(isInteger, opts, path);
+  return simpleSchema(checkInteger, opts, path);
 }
 
 function numberStringSchema(opts = {}, path) {
   expectIfDefined(T_NUMBER, opts.defaultValue, path);
-  return (v, path) => {
+  return (v, path = ROOT) => {
     const value = parseFloat(mandatoryCheck(T_STRING, opts, path, v));
     if (isNaN(value)) {
       error(path, "Invalid number");
@@ -147,7 +166,7 @@ function arraySchema(opts = {}, path) {
     error(path, "Array needs a subType");
   }
   const subType = schema(opts[ARRAY_SUB_TYPE_FIELD]);
-  return (v, path) => {
+  return (v, path = ROOT) => {
     const value = mandatoryCheck(T_ARRAY, opts, path, v);
     if (!value) return;
     return value.map((item, i) => subType(item, new Path(path, value, i + "")));
@@ -159,7 +178,7 @@ function multiSchema(opts = {}, path) {
     error(path, "Multi needs a subTypes array");
   }
   const subTypes = opts[MULTI_SUB_TYPES_FIELD].map(schema);
-  return (v, path) => {
+  return (v, path = ROOT) => {
     const value = mandatoryCheck(T_ARRAY, opts, path, v);
     return subTypes.map((sub, i) =>
       sub(value[i], new Path(path, value, i + ""))
@@ -171,14 +190,13 @@ function enumSchema(opts = {}, path) {
   if (getType(opts[ENUM_VALUES_FIELD]) !== T_ARRAY) {
     error(path, "Enum needs a values array");
   }
-  return (v, path) => {
-    return mandatoryCheck(
-      value => opts[ENUM_VALUES_FIELD].indexOf(value) >= 0,
+  return (v, path = ROOT) =>
+    mandatoryCheck(
+      value => opts[ENUM_VALUES_FIELD].indexOf(value) < 0,
       opts,
       path,
       v
     );
-  };
 }
 
 const fieldsSchema = (fields, path) =>
@@ -192,7 +210,7 @@ function objectSchema(opts = {}, path) {
     error(path, "Object needs a subTypes");
   }
   const fields = fieldsSchema(opts[OBJECT_FIELDS_FIELD], path);
-  return (v, path) => {
+  return (v, path = ROOT) => {
     const value = mandatoryCheck(T_OBJECT, opts, path, v);
     return Object.keys(fields).reduce((res, name) => {
       res[name] = fields[name](value[name], new Path(path, value, name));
@@ -206,7 +224,7 @@ function regexpSchema(opts = {}, path) {
   const convert =
     getType(opts.convert) === T_FUNCTION ? opts.convert : m => m[0];
 
-  return (v, path) => {
+  return (v, path = ROOT) => {
     const value = mandatoryCheck(T_STRING, opts, path, v);
     const m = opts.pattern.exec(value);
     if (!m) {
@@ -266,8 +284,6 @@ function handleObject(value, path) {
     return objectSchema({ [OBJECT_FIELDS_FIELD]: value }, path);
   }
 }
-
-const ROOT = new Path(null, {}, "");
 
 function isSchema(value) {
   return typeof value === "function" && value.__schema === true;
