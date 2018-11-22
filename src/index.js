@@ -350,17 +350,3 @@ schema.isSchema = isSchema;
 schema.Path = Path;
 
 module.exports = schema;
-
-const s = schema({
-  from: {
-    $type: numberStringSchema,
-    optional: true
-  },
-  to: {
-    $type: Number,
-    optional: true
-  }
-});
-
-const r = s({});
-console.log(r);
